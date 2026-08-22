@@ -4,8 +4,6 @@ export enum DiagnosticSeverity {
   Info = "Info",
 }
 
-
-
 // export interface Diagnostic {
 //   severity: DiagnosticSeverity;
 //   message: string;

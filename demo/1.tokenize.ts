@@ -10,8 +10,4 @@ const tokens = new SlizTokenizer(`
    </div>
 `).tokenize();
 
-
-
-
-
 console.dir(tokens, { depth: null });

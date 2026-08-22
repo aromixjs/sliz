@@ -45,7 +45,7 @@ export enum InterpolationStatus {
   Closed = "Closed",
   UnterminatedLiteral = "UnterminatedLiteral",
   UnterminatedEof = "UnterminatedEof",
-  InvalidStart = "InvalidStart"
+  InvalidStart = "InvalidStart",
 }
 
 export interface InterpolationOutcome {
@@ -62,11 +62,9 @@ export function captureInterpolation(scanner: ts.Scanner): InterpolationOutcome 
     return {
       status: InterpolationStatus.InvalidStart,
       start,
-      end: start
-    }
+      end: start,
+    };
   }
-
-
 
   const stack: FrameKind[] = [FrameKind.Brace];
   let previousSignificantKind = ts.SyntaxKind.OpenBraceToken;
@@ -78,13 +76,11 @@ export function captureInterpolation(scanner: ts.Scanner): InterpolationOutcome 
       continue;
     }
 
-
     if (kind === ts.SyntaxKind.SlashToken || kind === ts.SyntaxKind.SlashEqualsToken) {
       if (RegexExpectedAfter.has(previousSignificantKind)) {
         kind = scanner.reScanSlashToken();
       }
     }
-
 
     if (
       kind === ts.SyntaxKind.CloseBraceToken &&
@@ -92,7 +88,6 @@ export function captureInterpolation(scanner: ts.Scanner): InterpolationOutcome 
     ) {
       kind = scanner.reScanTemplateToken(/* isTaggedTemplate */ false);
     }
-
 
     if (scanner.isUnterminated()) {
       const end = scanner.getTokenEnd();
@@ -102,7 +97,6 @@ export function captureInterpolation(scanner: ts.Scanner): InterpolationOutcome 
         end,
       };
     }
-
 
     if (kind === ts.SyntaxKind.EndOfFileToken) {
       const end = scanner.getTokenEnd();
@@ -120,7 +114,6 @@ export function captureInterpolation(scanner: ts.Scanner): InterpolationOutcome 
       stack.push(FrameKind.TemplateInterpolation);
     }
 
-
     if (kind === ts.SyntaxKind.CloseBraceToken || kind === ts.SyntaxKind.TemplateTail) {
       stack.pop();
       if (stack.length === 0) {
@@ -132,7 +125,6 @@ export function captureInterpolation(scanner: ts.Scanner): InterpolationOutcome 
         };
       }
     }
-
 
     previousSignificantKind = kind;
   }

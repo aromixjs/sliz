@@ -19,13 +19,11 @@ describe("closing brace (core behavior)", () => {
     expect(slice(source, result)).toBe("{a}");
   });
 
-
   it("closes an arithmetic expression with surrounding whitespace", () => {
     const source = "{ a + b }";
     const result = scanAt(source, 0);
     expect(result.status).toBe(InterpolationStatus.Closed);
     expect(slice(source, result)).toBe("{ a + b }");
-
   });
 
   it('closes the originally-provided example {userId+ /*"name*/}', () => {
@@ -42,8 +40,6 @@ describe("closing brace (core behavior)", () => {
     expect(slice(source, result)).toBe("{ a => b }");
   });
 
-
-
   it("closes a comparison with spaces { a < b }", () => {
     const source = "{ a < b }";
     const result = scanAt(source, 0);
@@ -57,8 +53,6 @@ describe("closing brace (core behavior)", () => {
     expect(result.status).toBe(InterpolationStatus.Closed);
     expect(slice(source, result)).toBe("{ a <= b }");
   });
-
-
 
   it("stops scanning at the first } and ignores trailing text", () => {
     const source = "{a} b";
@@ -76,7 +70,6 @@ describe("closing brace (core behavior)", () => {
     expect(slice(source, result)).toBe("{a}");
   });
 });
-
 
 describe("string literals", () => {
   it("closes a double-quoted string expression", () => {
@@ -99,7 +92,6 @@ describe("string literals", () => {
     expect(result.status).toBe(InterpolationStatus.Closed);
     expect(slice(source, result)).toBe('{ "a\\"b" }');
   });
-
 
   it("handles an escaped quote inside a single-quoted string", () => {
     const source = "{ 'it\\'s' }";
@@ -138,7 +130,6 @@ describe("braces inside string literals", () => {
     expect(slice(source, result).startsWith('{ "abc')).toBe(true);
   });
 });
-
 
 describe("template literals", () => {
   it("closes a plain template literal", () => {
@@ -190,7 +181,6 @@ describe("template literals", () => {
   });
 });
 
-
 describe("comments", () => {
   it("closes after a line comment", () => {
     const source = "{ a // note\n b }";
@@ -227,7 +217,6 @@ describe("comments", () => {
     expect(slice(source, result)).toBe("{ a // note\n b }");
   });
 });
-
 
 describe("nested braces", () => {
   it("closes a nested object literal { { a: 1 } }", () => {
@@ -298,8 +287,6 @@ describe("regex / division disambiguation", () => {
   });
 });
 
-
-
 describe("template interpolation depth", () => {
   it("closes a template with multiple interpolations", () => {
     const source = "{ `a${b}c${d}e` }";
@@ -330,9 +317,6 @@ describe("template interpolation depth", () => {
   });
 });
 
-
-
-
 describe("deep nesting / scale", () => {
   it("closes 200 levels of nested braces", () => {
     const source = "{".repeat(200) + "x" + "}".repeat(200);
@@ -352,7 +336,6 @@ describe("deep nesting / scale", () => {
     expect(slice(source, result)).toBe(source);
   });
 });
-
 
 describe("malformed input / graceful degradation", () => {
   it("reports UnterminatedEof when no } is present", () => {
@@ -394,9 +377,7 @@ describe("whitespace handling", () => {
   });
 });
 
-
 describe("guards", () => {
-
   it("reports InvalidStart for a negative start without throwing", () => {
     const source = "{a}";
     let thrown: unknown;
@@ -404,10 +385,9 @@ describe("guards", () => {
     try {
       result = scanAt(source, -2);
       console.log(result);
-      
     } catch (error) {
       console.log(error);
-      
+
       thrown = error;
     }
     expect(thrown).toBeUndefined();
@@ -505,9 +485,7 @@ describe("realistic multi-slot source", () => {
   it("resolves the .map expression with an embedded template literal", () => {
     const result = scanAt(source, source.indexOf("{items.map"));
     expect(result.status).toBe(InterpolationStatus.Closed);
-    expect(slice(source, result)).toBe(
-      '{items.map((item) => `<li class="{row}">{item}</li>`)}',
-    );
+    expect(slice(source, result)).toBe('{items.map((item) => `<li class="{row}">{item}</li>`)}');
   });
 
   it("keeps inner {row}/{item} inside the template literal (single span)", () => {

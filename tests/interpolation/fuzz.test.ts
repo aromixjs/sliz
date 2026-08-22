@@ -30,7 +30,6 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
     .array(fc.constantFrom("a", "b", "c", " "), { maxLength: 6 })
     .map((chars) => `/* ${chars.join("")} */`);
 
-
   // innerExpr may include standalone brace groups; they are always nested
   // inside ( ) [ ] or ${ } so they never become the top-level closer.
   function innerExpr(depth: number): fc.Arbitrary<string> {
@@ -71,7 +70,6 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
     );
   });
 
-
   it("never throws and keeps invariants on fully arbitrary input", () => {
     fc.assert(
       fc.property(fc.string(), (source) => {
@@ -90,7 +88,6 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
     );
   });
 
-
   it("re-resolving a closed span is itself closed and self-contained", () => {
     fc.assert(
       fc.property(fc.string(), (source) => {
@@ -106,7 +103,6 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
       }),
     );
   });
-
 
   it("never throws for any start index (in-range or out-of-range)", () => {
     fc.assert(

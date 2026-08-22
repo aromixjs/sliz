@@ -21,11 +21,11 @@ The htmlparser2 tokenizer is fed with `write(source)` and `end()`. It's the clos
 
 There are three workloads, all generated from the same markup shape (a `<!DOCTYPE html>` document with a nav, a template-literal interpolation, and `{expr}` interpolations sprinkled through attributes and text, the small one being handwritten):
 
-| Workload | Input size |
-| -------- | ---------- |
-| small    | 440 bytes, handwritten `.sliz` snippet |
+| Workload | Input size                                     |
+| -------- | ---------------------------------------------- |
+| small    | 440 bytes, handwritten `.sliz` snippet         |
 | large    | 2000 generated rows (nav links and list items) |
-| huge     | 10000 generated rows |
+| huge     | 10000 generated rows                           |
 
 ## What the numbers mean
 
@@ -37,24 +37,24 @@ One representative run (Windows, Node v24):
 
 **small markup (440 bytes)**
 
-| tokenizer  | hz       | mean (ms) | p75 (ms) | p99 (ms) | samples |
-| ---------- | -------- | --------- | -------- | -------- | ------- |
-| sliz       | 29,465   | 0.0339    | 0.0319   | 0.0734   | 14,733  |
-| htmlparser2| 375,387  | 0.0027    | 0.0026   | 0.0050   | 187,694 |
+| tokenizer   | hz      | mean (ms) | p75 (ms) | p99 (ms) | samples |
+| ----------- | ------- | --------- | -------- | -------- | ------- |
+| sliz        | 29,465  | 0.0339    | 0.0319   | 0.0734   | 14,733  |
+| htmlparser2 | 375,387 | 0.0027    | 0.0026   | 0.0050   | 187,694 |
 
 **large markup (2000 rows)**
 
-| tokenizer  | hz     | mean (ms) | p75 (ms) | samples |
-| ---------- | ------ | --------- | -------- | ------- |
-| sliz       | 64.86  | 15.418    | 15.482   | 33      |
-| htmlparser2| 713.23 | 1.402     | 1.438    | 357     |
+| tokenizer   | hz     | mean (ms) | p75 (ms) | samples |
+| ----------- | ------ | --------- | -------- | ------- |
+| sliz        | 64.86  | 15.418    | 15.482   | 33      |
+| htmlparser2 | 713.23 | 1.402     | 1.438    | 357     |
 
 **huge markup (10000 rows)**
 
-| tokenizer  | hz    | mean (ms) | p75 (ms) | samples |
-| ---------- | ----- | --------- | -------- | ------- |
-| sliz       | 13.45 | 74.337    | 78.995   | 10      |
-| htmlparser2| 139.06| 7.191     | 7.343    | 70      |
+| tokenizer   | hz     | mean (ms) | p75 (ms) | samples |
+| ----------- | ------ | --------- | -------- | ------- |
+| sliz        | 13.45  | 74.337    | 78.995   | 10      |
+| htmlparser2 | 139.06 | 7.191     | 7.343    | 70      |
 
 ## Reading the results
 

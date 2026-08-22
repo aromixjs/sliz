@@ -1,5 +1,5 @@
 import { SlizTokenizer } from "@/src";
-import {Tokenizer} from "htmlparser2";
+import { Tokenizer } from "htmlparser2";
 import { bench, describe } from "vitest";
 
 const smallMarkup =

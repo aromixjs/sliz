@@ -7,7 +7,7 @@ const validStatuses = [
   InterpolationStatus.Closed,
   InterpolationStatus.UnterminatedLiteral,
   InterpolationStatus.UnterminatedEof,
-  InterpolationStatus.InvalidStart
+  InterpolationStatus.InvalidStart,
 ];
 
 const specialChars = fc.constantFrom(
@@ -37,9 +37,7 @@ const specialChars = fc.constantFrom(
 
 const codeString = fc.array(specialChars, { maxLength: 150 }).map((chars) => chars.join(""));
 
-
 describe("captureInterpolation property tests", () => {
-
   it("resolves an expression starting at a guaranteed { and keeps invariants", () => {
     fc.assert(
       fc.property(codeString, codeString, (prefix, suffix) => {
@@ -75,8 +73,6 @@ describe("captureInterpolation property tests", () => {
     );
   });
 
-
-
   it("when closed, end points right after a }", () => {
     fc.assert(
       fc.property(codeString, codeString, (prefix, suffix) => {
@@ -91,7 +87,6 @@ describe("captureInterpolation property tests", () => {
     );
   });
 
-
   it("when not closed, reports an unterminated outcome", () => {
     fc.assert(
       fc.property(codeString, codeString, (prefix, suffix) => {
@@ -99,16 +94,16 @@ describe("captureInterpolation property tests", () => {
         const openIndex = prefix.length;
         const result = scanAt(source, openIndex);
 
-        if (result.status !== InterpolationStatus.Closed &&
-          result.status !== InterpolationStatus.InvalidStart) {
+        if (
+          result.status !== InterpolationStatus.Closed &&
+          result.status !== InterpolationStatus.InvalidStart
+        ) {
           expect(validStatuses).toContain(result.status);
           expect(result.status).not.toBe(InterpolationStatus.Closed);
         }
       }),
     );
   });
-
-
 
   it("never throws for an in-bounds start at a {, returning a valid outcome", () => {
     fc.assert(
@@ -137,7 +132,6 @@ describe("captureInterpolation property tests", () => {
       }),
     );
   });
-
 
   it("reports InvalidStart, without throwing, when the start position is not an opening brace", () => {
     fc.assert(

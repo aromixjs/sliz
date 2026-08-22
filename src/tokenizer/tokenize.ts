@@ -9,9 +9,13 @@ export class SlizTokenizer extends CharacterScanner<Token> {
 
   constructor(source: string) {
     super(source);
-    this.scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard,source)
+    this.scanner = ts.createScanner(
+      ts.ScriptTarget.Latest,
+      false,
+      ts.LanguageVariant.Standard,
+      source,
+    );
   }
-
 
   private isHtmlIdentifier(code: number): boolean {
     return (
@@ -172,13 +176,13 @@ export class SlizTokenizer extends CharacterScanner<Token> {
   }
 
   private consumeTagEndIfPresent() {
-    this.skipWhiteSpace()
+    this.skipWhiteSpace();
     if (this.eof || !this.isTagEnd) {
       this.emit({
         type: TokenType.UnterminatedTag,
         start: this.position,
-        end: this.position
-      })
+        end: this.position,
+      });
 
       return;
     }
@@ -202,7 +206,6 @@ export class SlizTokenizer extends CharacterScanner<Token> {
   }
 
   /*===== Attributes =====*/
-
 
   private consumeTagAttributesIfPresent() {
     while (!this.eof) {
@@ -307,7 +310,7 @@ export class SlizTokenizer extends CharacterScanner<Token> {
   /*===== Js Interpolation =====*/
   private consumeJsInterpolation() {
     const start = this.position;
-    this.scanner.resetTokenState(start)
+    this.scanner.resetTokenState(start);
     const outcome = captureInterpolation(this.scanner);
     this.advanceTo(outcome.end);
 
@@ -346,7 +349,12 @@ export class SlizTokenizer extends CharacterScanner<Token> {
   private consumeUnknown() {
     const start = this.position;
 
-    while (!this.eof && !this.isWhitespace && !this.isTagEnd && !this.isHtmlIdentifier(this.peek())) {
+    while (
+      !this.eof &&
+      !this.isWhitespace &&
+      !this.isTagEnd &&
+      !this.isHtmlIdentifier(this.peek())
+    ) {
       this.advance();
     }
 
