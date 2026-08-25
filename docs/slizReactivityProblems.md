@@ -1,6 +1,6 @@
 # Sliz
 
-Sliz is trying to keep the same core idea as the rest of Aromix: the server is the main place where the application lives, and the browser should not require a second application architecture just to make the interface interactive.
+the server is the main place where the application lives, and the browser should not require a second application architecture just to make the interface interactive.
 
 The important part is that the server function should be directly usable from a view:
 
@@ -18,10 +18,6 @@ The difficult part is not calling the server function. The difficult part is wha
 
 If the server changes something, Sliz needs a way to update exactly the right part of the browser without keeping a full server-side UI state, without rebuilding the whole page, and without forcing the developer to write a large amount of synchronization code.
 
-That is the actual problem this document is about.
-
----
-
 # The core problem
 
 A server action can do arbitrary server work:
@@ -37,18 +33,18 @@ async function addUser() {
 
 The action is not tied to a database. It can call any server-side primitive that the application owns.
 
-After it finishes, Sliz needs to answer two separate questions.
+Sliz needs to answer two separate questions to make that server action usable.
 
 First:
 
 ```text
-What client values does this interaction need?
+What client values does this interaction/action need and where to get that?
 ```
 
 Second:
 
 ```text
-What part of the client UI needs to change?
+What part of the client UI needs to change after that action ?
 ```
 
 The first problem exists because browser-owned values are not automatically available on the server.
@@ -57,43 +53,9 @@ The second problem exists because the server must be able to precisely update th
 
 These two problems are related, but they should not automatically be solved by one large state-management system.
 
----
 
-# What the ideal solution needs to provide
+Things that i tried:
 
-The developer experience should feel close to normal server programming.
-
-The developer should be able to write a normal TypeScript function and call normal application code:
-
-```ts
-async function deleteUser() {
-    const user = await db.users.get(...);
-
-    await mailer.sendMail(...);
-
-    ...
-}
-```
-
-The browser should be able to call that function directly from the template.
-
-The server should be able to update a precise part of the browser without returning an entire page.
-
-The update should not require a virtual DOM or a previous server-side HTML snapshot.
-
-The system should work when the relevant UI is split across many components.
-
-The data an action needs should not have to be manually wired together in many unrelated templates.
-
-The API should be small enough that developers do not have to learn another state-management framework.
-
-The mechanism should work with ordinary TypeScript rather than requiring a new DSL for application logic.
-
-The server should not keep unrelated users' UI state in global process state.
-
-The solution should also be predictable: when something is changed, it should be obvious what will happen and where the data comes from.
-
----
 
 # First approach: LiveView-style server state
 
@@ -207,13 +169,32 @@ It risks turning Sliz into another reactive framework.
 
 ---
 
-# Fourth approach: explicit DOM-command API
+# Fourth approach: explicit action wiring
 
-The next approach is to stop trying to discover changes.
-
-The server action simply says what to update.
+The next approach was to make the server action explicitly describe both the data it needs from the UI and the UI it can update.
 
 For example:
+
+```ts
+const deleteUser = action({
+    email: Homepage.select("email"),
+
+    async run(c) {
+        const validatedEmail = validateEmail(c.email);
+
+        await mailer.sendMail({
+            to: validatedEmail,
+            body: EmailTemplate
+        });
+
+        Homepage.select("div1").innerText(
+            "Email Sent Successfully"
+        );
+    }
+});
+```
+
+The UI update side can also be expressed directly:
 
 ```ts
 MyComponent.select("status").text("Saved");
@@ -237,7 +218,7 @@ MyComponent.select("email").value("");
 MyComponent.select("submit").disabled(true);
 ```
 
-Collection operations can also be explicit:
+And collections can use the same mechanism:
 
 ```ts
 MyComponent.select("items").insert({
@@ -255,104 +236,59 @@ MyComponent.select("items").update(itemId, {
 MyComponent.select("items").move(itemId, 0);
 ```
 
-This has a major advantage.
+This solves the underlying synchronization problem directly.
 
-There is no diffing.
+The server does not have to discover what changed. The action explicitly identifies what it needs and what it wants to change. Because the exact target and operation are already known, there is no need for a server-side DOM snapshot, VDOM, or general UI diffing.
 
-The developer has already specified the exact mutation.
+It also provides precise typing if `select()` is compiler-aware and knows the valid references and their supported operations.
 
-The browser receives a compact command and applies it directly.
+The problem is that all of this precision has to be written manually.
 
-There is no server DOM snapshot and no VDOM.
-
-This is actually a strong architecture for the server-to-client direction.
-
-The problems are mainly API ergonomics and client-input discovery.
-
-The command API can become verbose and too close to the DOM.
-
-The server also needs typed references to elements/components, not just strings:
-
-```ts
-MyComponent.select("status")
-```
-
-is only type safe if the compiler knows that `"status"` exists and what kind of target it is.
-
-A string selector can solve runtime addressing, but it does not give the type safety desired for Sliz.
-
----
-
-# Fifth approach: explicit action dependencies
-
-The next idea was to make actions explicitly describe what they need.
-
-For example:
-
-```ts
-const deleteUser = action({
-    email: Homepage.select("email"),
-
-    async run(c) {
-        const validatedEmail = validateEmail(c.email);
-
-        await mailer.sendMail({
-            to: validatedEmail,
-            body: EmailTemplate
-        });
-
-        Homepage.select("div1").innerText(
-            "Email Sent Successfully"
-        );
-    }
-});
-```
-
-This is precise.
-
-The runtime knows exactly what to send to the server.
-
-The runtime also knows what the action is allowed to update.
-
-There is no dependency inference problem.
-
-The problem is that the dependency declaration becomes another API layer.
-
-For a large application, the same action can need data from many places:
+Every action becomes responsible for wiring together:
 
 ```text
-Header
-Sidebar
-Table
-Filter panel
-Dialog
-another component
+UI input
+    ↓
+action input
+
+action
+    ↓
+UI target
+    ↓
+UI operation
 ```
 
-The action then becomes a wiring point between unrelated parts of the UI.
+That creates a large amount of boilerplate. A complex action may need data from several unrelated components and may update several unrelated parts of the UI, making the wiring spread across the action definition and the component tree.
 
-That makes the action contract precise but the application structure harder to understand.
+The `select()` calls also become verbose and too close to a remote DOM API:
 
-There is also the problem of actions taking arguments.
+```ts
+MyComponent.select("items").update(...)
+MyComponent.select("status").text(...)
+MyComponent.select("email").value(...)
+```
 
-The more the action becomes a structured RPC declaration, the more Sliz starts to resemble a manually authored API system.
+The same problem appears on the input side. Explicit action dependencies effectively turn the action into a manually defined RPC contract.
 
-That conflicts with the goal of being able to write a small amount of normal TypeScript.
+This goes against the main Sliz goal:
 
----
+> write as little code as possible while still being precise, understandable, flexible, maintainable, and scalable.
 
-# Sixth approach: bind the UI values to the action
+So although this approach is technically sound and gives very precise behavior, it was rejected because **the precision is being purchased with too much explicit wiring**. The problem is not that the mechanism cannot work; the problem is that too much of the mechanism becomes application code.
+
+
+# Fifth approach: bind the UI values to the action
 
 Another version is:
 
 ```html
-<input .bind={checkout.address}>
+<input .bind={deleteUserAction.user}>
 ```
 
 and:
 
 ```html
-<select .bind={checkout.shipping}>
+<select .bind={deleteUserAction.address}>
 ```
 
 This solves transport automatically.
@@ -381,7 +317,7 @@ It is therefore not a good long-term foundation for large applications.
 
 ---
 
-# Seventh approach: form/data scopes
+# Sixth approach: form/data scopes
 
 A more structured version of binding is a logical data scope:
 
@@ -421,11 +357,11 @@ One operation may need all four.
 
 A form-like hierarchy does not naturally represent that relationship.
 
-It can be extended with explicit associations, but then the framework starts accumulating another layer of grouping rules.
+It can be extended with explicit associations, but then the framework starts accumulating another layer of grouping rules which is more or less the same as Fifth approach.
 
 ---
 
-# Eighth approach: server-side component instances
+# Seventh approach: server-side component instances
 
 Another option is to make every rendered component a server-side object.
 
@@ -451,7 +387,7 @@ It is clean, but it gives up too much of the lightweight server model.
 
 ---
 
-# Ninth approach: remote UI objects
+# Eighth approach: remote UI objects
 
 Another possibility is to keep the logical UI object on the server and the real DOM on the browser.
 
@@ -477,7 +413,7 @@ The useful idea is only the remote identity, not replicated UI state.
 
 ---
 
-# Tenth approach: client/server tier splitting
+# Ninth approach: client/server tier splitting
 
 Another idea is to let the compiler inspect an action and automatically discover which expressions are client values and which are server expressions.
 
@@ -497,7 +433,7 @@ It should not be the primary mechanism.
 
 ---
 
-# Eleventh approach: client-side state/model/store
+# Tenth approach: client-side state/model/store
 
 A typical SPA solves the cross-component data problem with a store:
 
@@ -522,7 +458,7 @@ Recreating a store inside Sliz would defeat part of the original reason for Sliz
 
 ---
 
-# Twelfth approach: snapshots and hydration
+# Eleventh approach: snapshots and hydration
 
 Another way to make a stateless server feel stateful is to send a serialized representation of the UI/application state and reconstruct it on every request.
 
@@ -549,7 +485,7 @@ This is the opposite of the minimal protocol Sliz should aim for.
 
 ---
 
-# Thirteenth approach: on-demand browser reads
+# 12th approach: on-demand browser reads
 
 Another idea is to let server code request a browser value only when it actually needs it.
 
@@ -575,7 +511,7 @@ It is useful as an escape hatch, but it should not become the normal interaction
 
 ---
 
-# Fourteenth approach: event streams as the whole application interface
+# 13th approach: event streams as the whole application interface
 
 Another idea is to make events the primary abstraction.
 
@@ -604,7 +540,7 @@ This is promising as a research direction, but it should not be adopted just to 
 
 ---
 
-# Fifteenth approach: materialized UI projections
+# 14th approach: materialized UI projections
 
 A stronger version of the event-stream idea treats UI fragments like materialized database views.
 
@@ -656,7 +592,7 @@ That may be worth exploring underneath Sliz, but not as a new developer-facing p
 
 ---
 
-# Sixteenth approach: event provenance
+# 15th approach: event provenance
 
 Another research direction is to track not only dependencies but the provenance of values.
 
@@ -715,152 +651,3 @@ There is no implementation where the relationship contains zero information.
 The real design goal is therefore not to make the relationship disappear.
 
 The goal is to put it in the place that requires the least code, is easiest to understand, and remains predictable at scale.
-
----
-
-# What the ideal Sliz solution should look like
-
-The ideal mechanism should have these properties.
-
-It should keep the programmer in normal TypeScript.
-
-An action should look like a normal function, not a second RPC DSL.
-
-The developer should not have to manually list dependencies for every action.
-
-The developer should not have to scatter bindings across unrelated components.
-
-A component should be able to expose useful data without knowing which future action will consume it.
-
-The action should be able to precisely obtain the data it needs without maintaining a server-side snapshot.
-
-The UI update should be precise without requiring a DOM diff.
-
-UI references should be typed and compiler-checked instead of arbitrary strings.
-
-Multiple instances of the same component should remain independent.
-
-An action should be allowed to produce multiple UI changes in one execution.
-
-A server event, webhook, queue event, or background operation should be able to participate in the same mechanism.
-
-There should be one primary way to solve the problem rather than a collection of `bind`, `model`, `scope`, `resource`, `signal`, `deps`, `invalidate`, and DOM APIs.
-
-The runtime should not need to know the application's business logic.
-
-The mechanism should not require a second client-side application architecture.
-
-The mechanism should not require a full server-side UI snapshot.
-
-The mechanism should minimize persistent per-user server memory.
-
-The protocol should be able to work over WebSocket efficiently.
-
----
-
-# The current conclusion
-
-The command-based UI update mechanism is still a good primitive.
-
-The problem is the way it was being exposed.
-
-This:
-
-```ts
-MyComponent.select("status").text("Saved");
-
-MyComponent.select("items").update(itemId, {
-    qty: 3
-});
-```
-
-is precise, but it is too verbose to be the normal application programming model.
-
-The same applies to explicit action dependency declarations.
-
-The next design should therefore try to keep these as **runtime primitives**, not user-facing concepts.
-
-The public API should be much closer to ordinary TypeScript.
-
-The current research direction that seems most promising is to find a way for the compiler/runtime to associate typed UI references with ordinary execution contexts while keeping the actual transport primitives underneath.
-
-The core architectural distinction should remain:
-
-```text
-Server
-    owns application truth
-
-Browser
-    owns actual DOM/UI state
-
-Protocol
-    carries events and precise updates
-
-Sliz
-    makes that protocol feel like normal server-side TypeScript
-```
-
-The solution should not try to make the server pretend it owns the browser UI, and it should not try to make the browser become another copy of the server application.
-
-The best solution is likely to be a very small abstraction that sits exactly at the boundary between **server execution** and **browser interaction**, rather than adding another state system on either side.
-
----
-
-# The design test
-
-Any future Sliz mechanism should be judged against one example like this:
-
-```ts
-function Dashboard() {
-    return sliz! {
-        <Header />
-        <Sidebar />
-        <Table />
-        <Toolbar />
-    }
-}
-```
-
-A toolbar action may need:
-
-```text
-Header.account
-Sidebar.filters
-Table.selection
-```
-
-and after executing server code it may need to change:
-
-```text
-Toolbar.status
-Table.rows
-Header.notification
-```
-
-The solution should allow that with:
-
-```text
-very little code
-```
-
-while making it obvious:
-
-```text
-where the input comes from
-what the action changes
-```
-
-without requiring:
-
-```text
-a server UI snapshot
-a client state store
-an action dependency schema
-scattered bindings
-full TypeScript AST analysis
-or a large new DSL
-```
-
-That is the actual bar Sliz needs to meet.
-
-The existing approaches all solve parts of the problem, but each one pays for it by adding either server state, client state, explicit wiring, compiler complexity, or transport overhead. The next iteration should therefore not be another variation of one of those approaches. It should change the location where the relationship is represented.
