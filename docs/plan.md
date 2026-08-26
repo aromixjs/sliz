@@ -87,40 +87,58 @@ In most frameworks, the same feature ends up living in two places: server code t
 
 Sliz collapses that into one file, written once, that looks like HTML.
 
-```html
-<script server lang="ts">
-  import { db } from "./db";
+```tsx
+function removeTask(taskId) {
+  db.tasks.delete(taskId);
+}
 
-  function removeTask(taskId) {
-    db.tasks.delete(taskId);
-  }
-</script>
+const HomePage = sliz!{
+  <button onclick="{removeTask}"></button>
+}
 
-<button onclick="{removeTask}"></button>
 ```
 
-Everything inside `<script server lang="ts">` is plain server-side TypeScript. It's never sent to the browser.
+sliz! is a macro that converts that inner HTML-like syntax into a plain JS object at compile time.
 
-the browser never even knows it exists. `onclick={removeTask}` points the button directly at that function. When someone clicks it, it's the server function that runs.
+Which will contain properties and methods for two things: hold enough structure to produce HTML from it, and carry whatever else is required to make the handler/RPC wiring work correctly.
 
-This is possible because a `.sliz` file doesn't compile into "a page plus separate client code" it compiles into something the server runs to produce HTML, along with a small map connecting the interactive parts of that HTML to the real server functions behind them:
+There's a runtime server-side function that uses that object to produce HTML on request, and sends the generated HTML to the client everything else stays server side, and the browser never even knows `removeTask` exists.
+
+`onclick={removeTask}` points the button directly at that function. When someone clicks it, it's the server function that runs.
+
+This is possible because a `sliz!` macro doesn't compile into "a page plus separate client code" it compiles into something the server runs to produce HTML, along with whatever internal bookkeeping is needed to connect the interactive parts of that html back to the real server functions behind them. Conceptually, that might look something like:
 
 ```ts
-export default {
-  handlers: {
-    task_remove_a1b2c3: removeTask,
-  },
-  render() {
-    let html = "";
-    html += '<button lay="click:task_remove_a1b2c3"></button>';
-    return html;
-  },
+const Homepage = {
+    tag: "div",
+    attributes: {
+        lay: "click:task_remove_a1b2c3"
+        id: buttonId
+    }
+    children: []
 };
 ```
 
 Notice `onclick={removeTask}` became `lay="click:task_remove_a1b2c3"` in the output.
 
 That's the seam where Sliz hands off to Layos. Sliz never ships any client behavior of its own, so whatever needs to happen in the browser gets expressed as a Layos token instead.
+
+
+There is also another syntax that is also equally good
+
+```html
+<server>
+  // all server js code
+function removeTask(taskId) {
+  db.tasks.delete(taskId);
+}
+
+</server>  
+<button onclick={removeTask}></button>
+
+```
+the final output will be the same whihc ever becomes cleaner to implment the html templateing is still the same .
+
 
 ## Layos
 

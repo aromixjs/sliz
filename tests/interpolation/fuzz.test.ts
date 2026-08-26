@@ -1,12 +1,15 @@
+import { InterpolationOutcome, InterpolationStatus } from "@/src";
 import * as fc from "fast-check";
-import { JsInterpolationResolver, JsInterpolationStatus } from "@/src";
 import { describe, expect, it } from "vitest";
+import { scanAt, slice } from "./setup";
 
 const validStatuses = [
-  JsInterpolationStatus.Closed,
-  JsInterpolationStatus.UnterminatedLiteral,
-  JsInterpolationStatus.UnterminatedEof,
+  InterpolationStatus.Closed,
+  InterpolationStatus.UnterminatedLiteral,
+  InterpolationStatus.UnterminatedEof,
 ];
+
+const allStatuses = [...validStatuses, InterpolationStatus.InvalidStart];
 
 describe("JsInterpolationResolver heavy fuzzing", () => {
   // Leaf tokens that never contain a structural }.
@@ -58,11 +61,11 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
         fc.pre(!expr.startsWith("{"));
         const source = prefix + "{" + expr + "}" + suffix;
         const open = prefix.length;
-        const result = new JsInterpolationResolver(source).resolve(open);
-        expect(result.status).toBe(JsInterpolationStatus.Closed);
+        const result = scanAt(source, open);
+        expect(result.status).toBe(InterpolationStatus.Closed);
         expect(result.start).toBe(open);
         expect(result.end).toBe(open + expr.length + 2);
-        expect(result.text).toBe("{" + expr + "}");
+        expect(slice(source, result)).toBe("{" + expr + "}");
       }),
     );
   });
@@ -72,13 +75,13 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
       fc.property(fc.string(), (source) => {
         const open = source.indexOf("{");
         fc.pre(open !== -1);
-        const result = new JsInterpolationResolver(source).resolve(open);
+        const result = scanAt(source, open);
         expect(validStatuses).toContain(result.status);
         expect(result.start).toBe(open);
         expect(result.end).toBeGreaterThanOrEqual(open);
         expect(result.end).toBeLessThanOrEqual(source.length);
-        expect(result.text).toBe(source.slice(open, result.end));
-        if (result.status === JsInterpolationStatus.Closed) {
+        expect(slice(source, result)).toBe(source.slice(open, result.end));
+        if (result.status === InterpolationStatus.Closed) {
           expect(source[result.end - 1]).toBe("}");
         }
       }),
@@ -90,11 +93,12 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
       fc.property(fc.string(), (source) => {
         const open = source.indexOf("{");
         fc.pre(open !== -1);
-        const result = new JsInterpolationResolver(source).resolve(open);
-        if (result.status === JsInterpolationStatus.Closed) {
-          const sub = new JsInterpolationResolver(result.text).resolve(0);
-          expect(sub.status).toBe(JsInterpolationStatus.Closed);
-          expect(sub.end).toBe(result.text.length);
+        const result = scanAt(source, open);
+        if (result.status === InterpolationStatus.Closed) {
+          const text = slice(source, result);
+          const sub = scanAt(text, 0);
+          expect(sub.status).toBe(InterpolationStatus.Closed);
+          expect(sub.end).toBe(text.length);
         }
       }),
     );
@@ -105,14 +109,15 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
       fc.property(fc.string(), fc.integer(), (source, offset) => {
         const start = source.length + offset;
         let thrown: unknown = null;
-        let result: ReturnType<JsInterpolationResolver["resolve"]> | undefined;
+        let result: InterpolationOutcome | undefined;
         try {
-          result = new JsInterpolationResolver(source).resolve(start);
+          result = scanAt(source, start);
         } catch (error) {
           thrown = error;
         }
         expect(thrown).toBeNull();
         expect(result).toBeDefined();
+        expect(allStatuses).toContain(result?.status);
       }),
       { numRuns: 2000 },
     );
@@ -130,19 +135,18 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
             source += (between[index] ?? "") + slots[index];
           }
           source += between[slots.length] ?? "";
-          const resolver = new JsInterpolationResolver(source);
           let from = 0;
           let position = source.indexOf("{", from);
           while (position !== -1) {
-            const result = resolver.resolve(position);
+            const result = scanAt(source, position);
             expect(validStatuses).toContain(result.status);
             expect(result.start).toBe(position);
             if (position < source.length) {
               expect(result.end).toBeGreaterThanOrEqual(position);
               expect(result.end).toBeLessThanOrEqual(source.length);
-              expect(result.text).toBe(source.slice(position, result.end));
+              expect(slice(source, result)).toBe(source.slice(position, result.end));
             }
-            if (result.status === JsInterpolationStatus.Closed) {
+            if (result.status === InterpolationStatus.Closed) {
               expect(source[result.end - 1]).toBe("}");
             }
             from = position + 1;
@@ -173,16 +177,10 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
         fc.property(fc.string(), regexExpr, fc.string(), (prefix, expr, suffix) => {
           const source = prefix + "{" + expr + "}" + suffix;
           const open = prefix.length;
-          const result = new JsInterpolationResolver(source).resolve(open);
-          if (result.status !== JsInterpolationStatus.Closed) {
-            require("node:fs").writeFileSync(
-              "E:/aromix/sliz/regex-out.txt",
-              `prefix=${JSON.stringify(prefix)} expr=${JSON.stringify(expr)} suffix=${JSON.stringify(suffix)} status=${result.status} text=${JSON.stringify(result.text)}\n`,
-            );
-          }
-          expect(result.status).toBe(JsInterpolationStatus.Closed);
+          const result = scanAt(source, open);
+          expect(result.status).toBe(InterpolationStatus.Closed);
           expect(result.end).toBe(open + expr.length + 2);
-          expect(result.text).toBe("{" + expr + "}");
+          expect(slice(source, result)).toBe("{" + expr + "}");
         }),
         { numRuns: 2000 },
       );
@@ -202,10 +200,10 @@ describe("JsInterpolationResolver heavy fuzzing", () => {
         fc.property(fc.string(), divExpr, fc.string(), (prefix, expr, suffix) => {
           const source = prefix + "{" + expr + "}" + suffix;
           const open = prefix.length;
-          const result = new JsInterpolationResolver(source).resolve(open);
-          expect(result.status).toBe(JsInterpolationStatus.Closed);
+          const result = scanAt(source, open);
+          expect(result.status).toBe(InterpolationStatus.Closed);
           expect(result.end).toBe(open + expr.length + 2);
-          expect(result.text).toBe("{" + expr + "}");
+          expect(slice(source, result)).toBe("{" + expr + "}");
         }),
       );
     });

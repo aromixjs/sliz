@@ -1,7 +1,28 @@
-import { SlizTokenizer } from "@/src";
-console.time();
-const output = new SlizTokenizer(
-  `<!doctype class="userdata-10" .for={user in users }   >my name is {username}</div    >`,
-).tokenize();
-console.log(output);
-console.timeEnd();
+import { SlizParser, SlizTokenizer } from "@/src";
+
+const tokens = new SlizTokenizer(`
+<server></server>
+   <div class="bg:red">
+   <span .if={userId}>
+   profile pic
+   <img src="/pic"/>
+   </span>
+   users {user.name}
+   </div>
+`).tokenize();
+
+console.dir(tokens, { depth: null });
+
+
+const data = {
+
+async *run(){
+
+
+
+
+   
+}
+
+
+}

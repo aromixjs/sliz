@@ -67,7 +67,7 @@ export interface UnsupportedTagNameToken extends BaseToken {
 }
 
 export interface UnterminatedTag extends BaseToken {
-  type: TokenType.UnterminatedTag
+  type: TokenType.UnterminatedTag;
 }
 
 /*=== Html Attribute Tokens ===*/

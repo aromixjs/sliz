@@ -1,7 +1,8 @@
 import * as fc from "fast-check";
-import { JsInterpolationResolver, JsInterpolationStatus, SlizTokenizer } from "@/src";
+import { captureInterpolation, InterpolationStatus, SlizTokenizer } from "@/src";
 import { TokenType } from "../src/tokenizer/token";
 import { describe, expect, it } from "vitest";
+import { scanAt } from "./interpolation/setup";
 
 const expression = fc.constantFrom(
   "a",
@@ -98,12 +99,11 @@ describe("SlizTokenizer heavy fuzzing", () => {
     fc.assert(
       fc.property(fc.string(), (source) => {
         const tokens = new SlizTokenizer(source).tokenize();
-        const resolver = new JsInterpolationResolver(source);
 
         for (const token of tokens) {
           if (token.type === TokenType.JsInterpolation) {
-            const outcome = resolver.resolve(token.start);
-            expect(outcome.status).toBe(JsInterpolationStatus.Closed);
+            const outcome = scanAt(source, token.start);
+            expect(outcome.status).toBe(InterpolationStatus.Closed);
             expect(outcome.end).toBe(token.end);
           }
         }
@@ -268,7 +268,9 @@ describe("SlizTokenizer heavy fuzzing", () => {
 
       expect(tokens[tokens.length - 1].type).toBe(TokenType.Eof);
       expect(tokens.filter((token) => token.type === TokenType.AttributeName)).toHaveLength(20_000);
-      expect(tokens.filter((token) => token.type === TokenType.JsInterpolation)).toHaveLength(20_000);
+      expect(tokens.filter((token) => token.type === TokenType.JsInterpolation)).toHaveLength(
+        20_000,
+      );
     });
 
     it("3000 levels of nested braces in an attribute expression", () => {

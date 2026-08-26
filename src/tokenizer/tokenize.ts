@@ -1,16 +1,38 @@
-import { CharacterScanner } from "../common/CharacterScanner";
-import { JsInterpolationResolver, JsInterpolationStatus } from "../common/JsInterpolationResolver";
+import ts from "typescript";
+import { CharacterScanner } from "./CharacterScanner";
+import { captureInterpolation, InterpolationStatus } from "./interpolation";
 import { Token, TokenType } from "./token";
 
+
+export function scan(source: string) {
+  let cursor = 0
+  while (cursor < source.length) {
+
+
+
+
+    cursor++
+  }
+
+
+
+
+}
+
+
 export class SlizTokenizer extends CharacterScanner<Token> {
-  private readonly jsResolver: JsInterpolationResolver;
+  private readonly scanner: ts.Scanner;
   private readonly unSupportedTagNames = new Set(["script", "style"]);
 
   constructor(source: string) {
     super(source);
-    this.jsResolver = new JsInterpolationResolver(source);
+    this.scanner = ts.createScanner(
+      ts.ScriptTarget.Latest,
+      false,
+      ts.LanguageVariant.Standard,
+      source,
+    );
   }
-
 
   private isHtmlIdentifier(code: number): boolean {
     return (
@@ -27,8 +49,8 @@ export class SlizTokenizer extends CharacterScanner<Token> {
       code !== this.doubleQuote &&
       code !== this.singleQuote &&
       code !== this.lessThan &&
-      code !== this.openBrace  &&
-      code !== this.closeBrace 
+      code !== this.openBrace &&
+      code !== this.closeBrace
     );
   }
 
@@ -171,13 +193,13 @@ export class SlizTokenizer extends CharacterScanner<Token> {
   }
 
   private consumeTagEndIfPresent() {
-    this.skipWhiteSpace()
+    this.skipWhiteSpace();
     if (this.eof || !this.isTagEnd) {
       this.emit({
         type: TokenType.UnterminatedTag,
         start: this.position,
-        end: this.position
-      })
+        end: this.position,
+      });
 
       return;
     }
@@ -201,7 +223,6 @@ export class SlizTokenizer extends CharacterScanner<Token> {
   }
 
   /*===== Attributes =====*/
-
 
   private consumeTagAttributesIfPresent() {
     while (!this.eof) {
@@ -306,35 +327,36 @@ export class SlizTokenizer extends CharacterScanner<Token> {
   /*===== Js Interpolation =====*/
   private consumeJsInterpolation() {
     const start = this.position;
-    const outcome = this.jsResolver.resolve(start);
+    this.scanner.resetTokenState(start);
+    const outcome = captureInterpolation(this.scanner);
     this.advanceTo(outcome.end);
 
-    if (outcome.status === JsInterpolationStatus.Closed) {
+    if (outcome.status === InterpolationStatus.Closed) {
       this.emit({
         type: TokenType.JsInterpolation,
         start,
         end: outcome.end,
-        value: outcome.text,
+        value: this.getChars(start),
       });
       return;
     }
 
-    if (outcome.status === JsInterpolationStatus.UnterminatedLiteral) {
+    if (outcome.status === InterpolationStatus.UnterminatedLiteral) {
       this.emit({
         type: TokenType.UnterminatedJsLiteral,
         start: outcome.start,
         end: outcome.end,
-        value: outcome.text,
+        value: this.getChars(start),
       });
       return;
     }
 
-    if (outcome.status === JsInterpolationStatus.UnterminatedEof) {
+    if (outcome.status === InterpolationStatus.UnterminatedEof) {
       this.emit({
         type: TokenType.UnterminatedJsInterpolation,
         start,
         end: outcome.end,
-        value: outcome.text,
+        value: this.getChars(start),
       });
       return;
     }
@@ -344,7 +366,12 @@ export class SlizTokenizer extends CharacterScanner<Token> {
   private consumeUnknown() {
     const start = this.position;
 
-    while (!this.eof && !this.isWhitespace && !this.isTagEnd && !this.isHtmlIdentifier(this.peek())) {
+    while (
+      !this.eof &&
+      !this.isWhitespace &&
+      !this.isTagEnd &&
+      !this.isHtmlIdentifier(this.peek())
+    ) {
       this.advance();
     }
 

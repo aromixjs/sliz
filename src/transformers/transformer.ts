@@ -1,4 +1,4 @@
-import { Node } from "../parser/types";
+import { Node } from "../parser/ast";
 import { ExtractedExpression, PreProcessError, PreProcessResult } from "./types";
 
 export type TransformedNode = TextNode | ElementNode | ConditionalNode;
