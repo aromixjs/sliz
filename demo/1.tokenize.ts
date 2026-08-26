@@ -1,6 +1,7 @@
 import { SlizParser, SlizTokenizer } from "@/src";
 
 const tokens = new SlizTokenizer(`
+<server></server>
    <div class="bg:red">
    <span .if={userId}>
    profile pic
@@ -11,3 +12,17 @@ const tokens = new SlizTokenizer(`
 `).tokenize();
 
 console.dir(tokens, { depth: null });
+
+
+const data = {
+
+async *run(){
+
+
+
+
+   
+}
+
+
+}

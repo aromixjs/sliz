@@ -3,6 +3,23 @@ import { CharacterScanner } from "./CharacterScanner";
 import { captureInterpolation, InterpolationStatus } from "./interpolation";
 import { Token, TokenType } from "./token";
 
+
+export function scan(source: string) {
+  let cursor = 0
+  while (cursor < source.length) {
+
+
+
+
+    cursor++
+  }
+
+
+
+
+}
+
+
 export class SlizTokenizer extends CharacterScanner<Token> {
   private readonly scanner: ts.Scanner;
   private readonly unSupportedTagNames = new Set(["script", "style"]);
