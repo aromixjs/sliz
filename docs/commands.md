@@ -26,7 +26,7 @@ MyComponent.select("items").reorder([id3, id1, id2]);
 
 ```ts
 const deleteUser = action({
-  deps:[Home.userContent],
+  deps:[UserList.userContent],
   async run(c) {
     const validatedEmail = validateEmail(c.userContent);
     await mailer.sendMail({
@@ -35,12 +35,23 @@ const deleteUser = action({
     });
     
 
-    c.
+    c.send(UserList.someRef,data)
 
     
   },
 });
 ```
+
+
+```ts
+const UserList = sliz!{
+
+//html code
+
+
+} 
+```
+
 
 ```html
 <server>

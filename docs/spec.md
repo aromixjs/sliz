@@ -1,90 +1,51 @@
-# View Layer Syntax
+# Aromix View
 
-## Two Blocks
+File Extension: `.av`
 
-```
-<script server>
-  // Server only
-</script>
+Its A file Format That Bridges Between Html's Client Side Capability With Server Side Logic with precise code & minimal boilerplate.
 
-<script client>
-  // Client only
-</script>
-```
+```html
+<!--Home.av file-->
+<script server lang="ts">
+  import db from "#db";
+  import User from "./User.av";
+  import { render } from "@aromix/view";
 
-## Data Flow
+  const url = request.url();
+  const headers = request.headers();
+  const userAgent = request.header("User-Agent");
+  const cookies = request.cookies();
 
-Parent passes data:
+  let users;
+  onRender(async () => {
+    const session = request.cookie("session");
+    users = await db.select().from("users").where({ session });
+  });
 
-```
-<Child expose={{ data: { todos } }} />
-```
+  onMount(() => {});
 
-Child reads data:
-
-```
-let { todos } = $props()
-```
-
-## Event Flow
-
-Parent listens:
-
-```
-<Child on:add="handleAdd" />
-```
-
-Child sends event:
-
-```
-$emit('add', { text: 'Buy milk' })
-```
-
-## Full Example
-
-```
-// Parent
-<script server>
-  const todos = await ctx.db.findMany('todos')
-</script>
-
-<TodoList expose={{ data: { todos } }} on:add="handleAdd" />
-
-<script client>
-  function handleAdd(event) {
-    todos = [...todos, event.detail]
+  async function deleteUser(id: string) {
+    await db.delete().from("users").where({ id });
+    delete self.listItems[id];
   }
+
+  async function createUser() {}
 </script>
+<div .for="{user in users}" .key="{user.id}" :listItems="innerHtml">
+  <User user="{user}" />
+  <button onclick="{deleteUser(user.id)}"></button>
+</div>
 ```
 
-```
-// Child
-<script client>
-  let { todos } = $props()
-  let newTodo = ''
-  
-  function addTodo() {
-    $emit('add', { text: newTodo })
-    newTodo = ''
-  }
+```html
+<!--User.av-->
+<script server lang="ts">
+  import UserModel from "#models";
+  const { user } = input<{ user: typeof UserModel.$inferSelect }>();
 </script>
-
-<input bind:value="newTodo" />
-<button on:click="addTodo">Add</button>
-
-{{#each todos as todo}}
-  <li>{{ todo.text }}</li>
-{{/each}}
+<div lay="card:user">
+  <p>{user.id}</p>
+  <p>{user.name}</p>
+  <p>{user.email}</p>
+</div>
 ```
-
-## API
-
-| API                       | Purpose                |
-| ------------------------- | ---------------------- |
-| `expose({ data: {...} })` | Pass data to child     |
-| `on:event="handler"`      | Listen for child event |
-| `$props()`                | Read exposed data      |
-| `$emit('name', data)`     | Send event to parent   |
-| `$state(initial)`         | Client reactive state  |
-| `bind:value`              | Two-way binding        |
-| `on:click`                | Event handler          |
