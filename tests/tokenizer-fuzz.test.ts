@@ -1,7 +1,7 @@
+import { InterpolationStatus, SlizTokenizer } from "@/src";
 import * as fc from "fast-check";
-import { captureInterpolation, InterpolationStatus, SlizTokenizer } from "@/src";
-import { TokenType } from "../src/tokenizer/token";
 import { describe, expect, it } from "vitest";
+import { TokenType } from "../src/compiler/tokenizer/token";
 import { scanAt } from "./interpolation/setup";
 
 const expression = fc.constantFrom(

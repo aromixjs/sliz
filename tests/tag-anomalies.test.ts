@@ -1,6 +1,6 @@
 import { SlizTokenizer } from "@/src";
-import { TokenType } from "../src/tokenizer/token";
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import { TokenType } from "../src/compiler/tokenizer/token";
 
 describe("tag attribute anomalies", () => {
   it("expression with > comparison in attribute", () => {
