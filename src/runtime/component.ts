@@ -1,15 +1,18 @@
-import { ComponentMeta } from "./types";
+export interface AvComponent<Self, Server, Template> {}
 
-export async function component<
-  Self extends object,
-  Expose extends Record<string, any>,
-  Input extends Maybe<object>,
->(meta: ComponentMeta<Self, Expose, Input>) {
-  console.log(meta.id);
-  console.log(meta.props);
-  console.log(meta.self);
-  const { self, props } = meta
-  const exposed = await meta.server(self, {}, () => props)
-  console.log(exposed);
-  console.log(meta.template(exposed.expose));
+export function component<Self, Server, Template>(self: Self, server: Server, template: Template): AvComponent<Self, Server, Template> {
+  const componentMeta = {}
+  const internalKey = Symbol('Aromix:Component:Meta')
+  Object.defineProperty(componentMeta, internalKey, {
+    value: {
+      self,
+      server,
+      template
+    },
+    enumerable: false,
+    writable: false,
+    configurable: false
+  })
+
+  return componentMeta
 }
