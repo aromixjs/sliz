@@ -47,6 +47,7 @@ Its A file Format That Bridges Between Html's Client Side Capability With Server
 </div>
 <div :dialog="innerHtml"></div>
 ```
+
 Converted Js:
 
 ```js
@@ -113,7 +114,18 @@ export default component((context) => {
           {
             type: "tag",
             name: "input",
-          },
+            refs:[
+{
+identifier:'email',
+target:'value',
+uuid: '123455'
+
+}
+
+
+            ]
+
+                      },
           {
             type: "tag",
             name: "input",
@@ -155,8 +167,6 @@ export default component((context) => {
 
 ```
 
-
-
 Child Component:
 
 ```html
@@ -174,4 +184,4 @@ Child Component:
   <p>{user.email}</p>
   <button onclick="{onDelete(user.id)}"></button>
 </div>
-``` 
+```
