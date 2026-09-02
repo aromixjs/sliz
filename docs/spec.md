@@ -12,12 +12,7 @@ Its A file Format That Bridges Between Html's Client Side Capability With Server
   import Dialog from "./Dialog.av";
   import { render } from "@aromix/view";
 
-  const url = request.url();
-  const headers = request.headers();
-  const userAgent = request.header("User-Agent");
-  const cookies = request.cookies();
-
-  let users;
+  let users: any[];
   onRender(async () => {
     const session = request.cookie("session");
     if (!session) {
@@ -43,8 +38,7 @@ Its A file Format That Bridges Between Html's Client Side Capability With Server
   }
 </script>
 <div .for="{user in users}" .key="{user.id}" :listItems="innerHtml">
-  <User user="{user}" />
-  <button onclick="{deleteUser(user.id)}"></button>
+  <User user="{user}" onDelete="{deleteUser}" />
 </div>
 
 <div>
@@ -53,111 +47,131 @@ Its A file Format That Bridges Between Html's Client Side Capability With Server
 </div>
 <div :dialog="innerHtml"></div>
 ```
+Converted Js:
+
+```js
+// Home.av.ts file
+import db from "#db";
+import User from "./User.av";
+import Dialog from "./Dialog.av";
+import { render, component } from "@aromix/view";
+
+export default component((context) => {
+  let { request, onRender, self } = context;
+  // ==== User Script Start ===
+  let users: any[];
+  onRender(async () => {
+    const session = request.cookie("session");
+    if (!session) {
+      return request.redirect("/login");
+    }
+    users = await db.select().from("users").where({ session });
+  });
+
+  async function deleteUser(id: string) {
+    await db.delete().from("users").where({ id });
+    delete self.listItems[id];
+  }
+
+  async function createUser() {
+    const userData = {
+      email: self.email,
+      name: self.name,
+    };
+    await db.insert("users").value(userData);
+    self.dialog = render(Dialog, userData);
+    self.name = "";
+    self.email = "";
+  }
+
+  // ==== User Script End ===
+  return {
+    template() {
+      const html: Array<object> = [];
+      for (user in users) {
+        html.push({
+          type: "tag",
+          name: "div",
+          key: user.id,
+          childs: [
+            {
+              type: "component",
+              reference: Users,
+              inputs: {
+                user: user,
+                onDelete: deleteUser,
+              },
+            },
+          ],
+        });
+      }
+
+      html.push({
+        type: "tag",
+        name: "div",
+        childs: [
+          {
+            type: "tag",
+            name: "input",
+          },
+          {
+            type: "tag",
+            name: "input",
+          },
+        ],
+      });
+
+      html.push({
+        type: "tag",
+        name: "div",
+        childs: [],
+      });
+
+      return html;
+    },
+    actions: [
+      {
+        reference: deleteUser,
+        parameter: {
+          id: {
+            type: "string",
+          },
+        },
+        readDeps: [],
+        writeDeps: ["self.listItem"],
+        routeId: "12dyed34dh",
+      },
+
+      {
+        reference: createUser,
+        parameter: {},
+        readDeps: ["self.email", "self.name"],
+        writeDeps: ["self.dialog", "self.name", "self.email"],
+        routeId: "8ksj32jd9a",
+      },
+    ],
+  };
+});
+
+```
+
+
+
+Child Component:
 
 ```html
 <!--User.av-->
 <script server lang="ts">
   import UserModel from "#models";
-  const { user } = input<{ user: typeof UserModel.$inferSelect }>();
+  const { user, onDelete } = input<{
+    user: typeof UserModel.$inferSelect;
+    onDelete: Function;
+  }>();
 </script>
 <div lay="card:user">
   <p>{user.id}</p>
   <p>{user.name}</p>
   <p>{user.email}</p>
+  <button onclick="{onDelete(user.id)}"></button>
 </div>
-```
-
-Converted Js:
-
-```js
-  import db from "#db";
-  import User from "./User.av";
-  import Dialog from "./Dialog.av";
-  import { render,av_component } from "@aromix/view";
-
-// Home.av.ts file
-export default av_component(c => {
-   let { request, onRender, self, actions, template } = c
-   // ==== User Script Start ===
-   const url = request.url();
-   const headers = request.headers();
-   const userAgent = request.header("User-Agent");
-   const cookies = request.cookies();
-
-   let users: any;
-   onRender(async () => {
-      const session = request.cookie("session");
-      if (!session) {
-         return request.redirect("/login");
-      }
-      users = await db.select().from("users").where({ session });
-   });
-
-
-   async function deleteUser(id: string) {
-      await db.delete().from("users").where({ id });
-      delete self.listItems[id];
-   }
-
-   async function createUser() {
-      const userData = {
-         email: self.email,
-         name: self.name,
-      };
-      await db.insert("users").value(userData);
-      self.dialog = render(Dialog, userData);
-      self.name = "";
-      self.email = "";
-   }
-   // ==== User Script End ===
-
-   actions.push({
-      reference: deleteUser,
-      readDeps: {
-         parmeter: {
-            id: {
-               type: 'string'
-            }
-         },
-      },
-      writeDeps: {
-         'self': {}
-      },
-      routeId: '12dfxyed34dh'
-   })
-
-
-   template = () => {
-      const html: Array<object> = []
-
-
-      for (user in users) {
-         html.push({
-            tag: 'div',
-            childs: [
-
-               {
-
-                  type: 'componenet',
-                  referance: users,
-                  inputs: {
-                     user: user
-                  }
-               },
-               {
-                  tag: 'button',
-                  onclick: '12dfxyed34dh'
-               },
-
-            ]
-
-         })
-
-
-      }
-      // same push with necessery if else for or other control flow
-      return html
-   }
-})
-
-```
+``` 
