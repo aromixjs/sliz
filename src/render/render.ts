@@ -1,4 +1,4 @@
-import { templateToHtml } from "./toHtml";
+import { templateToHtml } from "./templateToHtml";
 import { AvComponent, RenderContext } from "./types";
 
 export function render<
