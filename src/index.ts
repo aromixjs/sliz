@@ -1,6 +1,4 @@
-import { render } from "./render/render";
 import { AromixHttpRequest } from "./router/request";
-import { c } from "./runtime/CNode";
 
 let recurse = true
 // Input Code::
@@ -15,30 +13,29 @@ let recurse = true
 </script>
 <input :number="value"/>
  */
-export class Home {
+export default class Home {
   declare SelfType: { number: number }
   declare PropType: { initial: number }
+  static SelfDefaults = { number: 0 }
 
-  static SelfMeta = {
-    number: {
-      type: "number",
-      from: "12345"
-    },
+
+
+  static c(props: Home['PropType']) {
+    return {
+      type: "component" as const,
+      reference: Home,
+      props,
+    };
   }
-
-  static SelfDefaults = {
-    number: 0
-  }
-
 
 
   static Server(
     self: Home['SelfType'],
     request: AromixHttpRequest,
-    props: () => Home['PropType']
+    props: Home['PropType']
   ) {
 
-    const { initial } = props();
+    const { initial } = props;
     function logValue() {
       console.log(request);
       console.log(self.number)
@@ -50,7 +47,13 @@ export class Home {
         logValue
       },
       hooks: [],
-      actions: []
+      actions: [
+        {
+          reference: logValue,
+          readDeps: ['number'],
+          token: 'act_log_value_123'
+        }
+      ]
     };
   }
 
@@ -80,7 +83,7 @@ export class Home {
 
     if (recurse) {
       recurse = false
-      $html.push(c(Home, { initial: 0 }))
+      $html.push(Home.c({ initial: 0 }))
     }
     return $html;
   }
