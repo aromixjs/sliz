@@ -1,18 +1,25 @@
-export interface AvComponent<Self, Server, Template> {}
+export const ComponentKey = Symbol('Aromix:Component:Key')
+export interface AvComponent<Self, Server, Template> {
+  [ComponentKey]: {
+    self: Self,
+    server: Server,
+    template: Template
+  }
+}
 
-export function component<Self, Server, Template>(self: Self, server: Server, template: Template): AvComponent<Self, Server, Template> {
-  const componentMeta = {}
-  const internalKey = Symbol('Aromix:Component:Meta')
-  Object.defineProperty(componentMeta, internalKey, {
-    value: {
+export function component<
+  Self extends object,
+  Server,
+  Template>(self: Self, server: Server, template: Template): AvComponent<Self, Server, Template> {
+  const componentMeta = {
+    [ComponentKey]: {
       self,
       server,
       template
-    },
-    enumerable: false,
-    writable: false,
-    configurable: false
-  })
+    }
+  }
+
+
 
   return componentMeta
 }

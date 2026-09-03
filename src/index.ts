@@ -1,19 +1,23 @@
 import { AromixHttpRequest } from "./router/request";
 import { component } from "./runtime/component";
 
-const $HomeSelf = {
+const $HomeSelfMeta = {
   number: {
     type: "number",
     from: "12345"
   },
 }
 
-function $HomeServerBlock(self: typeof $HomeSelf, request: AromixHttpRequest, props: () => { initial: number }) {
+interface $HomeSelf {
+  number: number
+}
+
+
+function $HomeServerBlock(self: $HomeSelf, request: AromixHttpRequest, props: () => { initial: number }) {
   const { initial = 0 } = props();
   function logValue() {
     console.log(self.number)
   }
-
 
   return {
     expose: {
@@ -49,4 +53,6 @@ function $HomeTemplateBlock(exposed: ReturnType<typeof $HomeServerBlock>['expose
   return $html;
 }
 
-const Home = component($HomeSelf, $HomeServerBlock, $HomeTemplateBlock)
+const Home = component($HomeSelfMeta, $HomeServerBlock, $HomeTemplateBlock)
+
+Home
