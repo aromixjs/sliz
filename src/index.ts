@@ -1,16 +1,22 @@
+import { render } from "./render/render";
 import { AromixHttpRequest } from "./router/request";
 
 
+// Input Code::
+/*
+<script server lang="ts">
+    const { initial } = props<{ initial:number}>();
 
+    function logValue() {
+      console.log(request);
+      console.log(self.number)
+    }
+</script>
+<input :number="value"/>
+ */
 export class Home {
-
-  declare SelfType: {
-    number: number
-  }
-
-  declare PropType: {
-    initial: number
-  }
+  declare SelfType: { number: number }
+  declare PropType: { initial: number }
 
   static SelfMeta = {
     number: {
@@ -31,10 +37,9 @@ export class Home {
     props: () => Home['PropType']
   ) {
 
-    const { initial = 0 } = props();
+    const { initial } = props();
     function logValue() {
       console.log(request);
-
       console.log(self.number)
     }
 
@@ -78,3 +83,11 @@ export class Home {
 
 
 
+const output = render(Home, {
+  props: {
+    initial: 0
+  },
+  request: {}
+})
+
+console.dir(output, { depth: null });
