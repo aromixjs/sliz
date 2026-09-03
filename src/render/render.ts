@@ -1,5 +1,6 @@
+import { AvComponent } from "../runtime/component";
 import { templateToHtml } from "./templateToHtml";
-import { AvComponent, RenderContext } from "./types";
+import { RenderContext } from "./types";
 
 export function render<
    Instance extends { SelfType: any, PropType: any },

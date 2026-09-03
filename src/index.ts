@@ -1,7 +1,8 @@
 import { render } from "./render/render";
 import { AromixHttpRequest } from "./router/request";
+import { c } from "./runtime/CNode";
 
-
+let recurse = true
 // Input Code::
 /*
 <script server lang="ts">
@@ -75,6 +76,12 @@ export class Home {
         }
       ]
     })
+
+
+    if (recurse) {
+      recurse = false
+      $html.push(c(Home, { initial: 0 }))
+    }
     return $html;
   }
 }
@@ -83,11 +90,13 @@ export class Home {
 
 
 
-const output = render(Home, {
-  props: {
-    initial: 0
-  },
-  request: {}
-})
+// const output = render(Home, {
+//   props: {
+//     initial: 0
+//   },
+//   request: {}
+// })
 
-console.dir(output, { depth: null });
+console.dir(Home.Template({
+  initial: 0, logValue: () => console.log('test')
+}), { depth: null });
