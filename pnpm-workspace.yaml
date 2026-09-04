@@ -2,3 +2,5 @@ allowBuilds:
   "@biomejs/biome": true
   core-js: true
   esbuild: true
+minimumReleaseAgeExclude:
+  - '@aromix/core@0.6.0'

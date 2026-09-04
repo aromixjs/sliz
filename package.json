@@ -47,6 +47,8 @@
     "fmt:check": "oxfmt --check"
   },
   "dependencies": {
+    "@aromix/core": "^0.6.0",
+    "h3": "2.0.1-rc.30",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
