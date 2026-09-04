@@ -100,18 +100,3 @@ namespace Home {
 
 export default Home;
 ```
-
-
-```ts
-
-export function test(){
-
-
-  return sliz!{
-
-
-    
-  }
-}
-
-```

@@ -1,22 +1,37 @@
-import { AvComponent } from "../runtime/component";
-import { templateToHtml } from "./templateToHtml";
-import { RenderContext } from "./types";
 
-export function render<
-  Prop extends object = any,
-  Self extends object = any,
-  Expose extends object = any,
->(component: AvComponent<Prop, Self, Expose>, context: RenderContext<Prop>) {
-  const self = structuredClone(component.SelfDefaults);
-  const server = component.Server(self, context.request, context.props);
-  const template = component.Template(server.expose);
-  const html = templateToHtml(template);
+import { AV } from "./av.type";
 
+export async function render<Ctx extends AV.Ctx>(avfn: AV.Fn<Ctx>, ctx: Ctx) {
+  const res = await avfn(ctx)
+  const html = render.toHtml(res.html())
   return {
-    html,
-    self,
-    expose: server.expose,
-    actions: server.actions,
-    hooks: server.hooks,
+    res,
+    html
   };
+}
+
+
+
+
+render.toHtml = (nodes: Array<any>) => {
+  return nodes
+    .map((node) => {
+      const attributes = Object.entries(node.attributes)
+        .map(([key, value]) => {
+          return `${key}="${value}"`;
+        })
+        .join(" ");
+
+      let children = "";
+      if (node.childs) {
+        children = render.toHtml(node.childs);
+      }
+      let open = `<${node.name}>`;
+      if (attributes) {
+        open = `<${node.name} ${attributes}>`;
+      }
+
+      return `${open}${children}</${node.name}>`;
+    })
+    .join("");
 }

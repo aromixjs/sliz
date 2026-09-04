@@ -1,58 +1,55 @@
 ```ts
-// .av file
-<server>
-import {db} from "./db.config"
-const props = props<{
-  userId:string
-}>()
-
-self.
-
-const save = action({
-  input:[self.email,local.get('theme')],
-  async run(c) {
-
-
-   await  db.insertEmail(c.email)
-    c.send(self.email, "Updated From Server");
-
-// or
-    c.sendMany({
-      self.email: '';
-
-    })
-
-
-c.render(self.outerDiv, CongratulationComponent)
-
-  },
-});
-
-
-
-
-
-</server>
-<div>
-
-<input :email="value"/>
-<div>{ self.email }</div>
-<button onclick={}>
-
-<button if={props.userId}>{userId}</button>
-</div>
-<div :outerDiv="innerHtml"></div>
-
-```
-
-```ts
-
-@server{
-
-
-
-
+interface HomeCtx {
+  props: { name: string };
+  self: { number: string };
+  browser: {};
 }
 
+export default async function (c: HomeCtx) {
+  //----- user code -----
+    const { initial } = c.props;
 
+    function logValue() {
+      console.log(request);
+      console.log(self.number);
+    }
+
+  //----- end user code ----
+
+  const meta = {
+    actions: {
+      act_log_value_123: {
+        ref: logValue
+        self: {
+          number: {
+            target: "12345",
+            extract: "value",
+          },
+        },
+      },
+    },
+  };
+
+  const view = () => {
+    const $html: Array<object> = [];
+    $html.push({
+      type: "tag",
+      name: "input",
+      attributes: {
+        value: initial,
+        type: "number",
+        onchange: logValue,
+      },
+      refId: "12345",
+    });
+
+    return $html;
+  };
+
+
+  return {
+    view,
+    meta,
+  }
+}
 ```
