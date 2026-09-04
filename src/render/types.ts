@@ -1,7 +1,6 @@
-import { AromixHttpRequest } from "../router/request"
+import { AromixHttpRequest } from "../router/request";
 
 export interface RenderContext<Props extends object> {
-   props: Props,
-   request: AromixHttpRequest
+  props: Props;
+  request: AromixHttpRequest;
 }
-

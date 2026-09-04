@@ -26,38 +26,36 @@ It:
 - applies server-produced effects to the DOM;
 - executes `lay` tokens.
 
-
-
 ## 2. Sliz References
 
 References use:
 
 ```html
-ref:<name> ="<kind>"
+ref:<name> ="<kind>"</kind></name>
 ```
 
 Example:
 
 ```html
-<input ref:userEmail="value">
-<p ref:status="innerText">
+<input ref:userEmail="value" />
+<p ref:status="innerText"></p>
 <div ref:content="innerHTML">
-<dialog ref:dialog="dialog">
+  <dialog ref:dialog="dialog"></dialog>
+</div>
 ```
 
 Sliz generates typed references:
 
 ```ts
-Home.userEmail
-Home.status
-Home.content
-Home.dialog
+Home.userEmail;
+Home.status;
+Home.content;
+Home.dialog;
 ```
 
 The `kind` determines the reference's type and runtime behavior.
 
 A reference is an addressable target, not a DOM object.
-
 
 ## 3. Actions
 
@@ -65,25 +63,23 @@ Server actions declare only the browser values required before RPC.
 
 ```ts
 const save = action({
-    input: [
-        Home.userEmail
-    ],
+  input: [Home.userEmail],
 
-    async run(c) {
-        const user = await db.user.findByEmail(c.userEmail);
+  async run(c) {
+    const user = await db.user.findByEmail(c.userEmail);
 
-        if (!user) {
-            Home.status = "User not found";
-            Home.dialog = "open";
-            return;
-        }
-
-        await db.user.update({ id: user.id });
-
-        Home.status = "Saved";
-        Home.content = renderUser(user);
-        Home.dialog = "close";
+    if (!user) {
+      Home.status = "User not found";
+      Home.dialog = "open";
+      return;
     }
+
+    await db.user.update({ id: user.id });
+
+    Home.status = "Saved";
+    Home.content = renderUser(user);
+    Home.dialog = "close";
+  },
 });
 ```
 
@@ -98,9 +94,7 @@ An action may target any compiled reference, including references belonging to u
 Before RPC, Layos resolves every item in `input`.
 
 ```ts
-input: [
-    Home.userEmail
-]
+input: [Home.userEmail];
 ```
 
 produces a request containing only that value.
@@ -125,7 +119,6 @@ Layos is responsible for converting these effects into browser operations.
 
 The action does not directly manipulate the DOM.
 
-
 ## 6. Missing Targets
 
 If a server output targets an element that is not mounted in the current page/session, Layos ignores that effect.
@@ -137,11 +130,11 @@ This does not fail the action.
 `lay` remains the only declarative language for client-side behavior.
 
 ```html
-<button lay="click:ripple">
+<button lay="click:ripple"></button>
 ```
 
 ```html
-<button lay="click:ripple dialog:[click:toggle]">
+<button lay="click:ripple dialog:[click:toggle]"></button>
 ```
 
 Sliz server actions do not modify or generate `lay` values as their application-level output mechanism.

@@ -2,186 +2,116 @@
 
 File Extension: `.av`
 
-Its A file Format That Bridges Between Html's Client Side Capability With Server Side Logic with precise code & minimal boilerplate.
+Aromix View is a file format that bridges HTML's client-side capabilities with type-safe server-side logic using a compile-time namespace architecture, maintaining zero client-side component footprint and minimal runtime overhead.
+
+## 1. Component
+
+Source File (`home.av`)
 
 ```html
-<!--Home.av file-->
 <script server lang="ts">
-  import db from "#db";
-  import User from "./User.av";
-  import Dialog from "./Dialog.av";
-  import { render } from "@aromix/view";
+  const { initial } = props<{ initial: number }>();
 
-  let users: any[];
-  onRender(async () => {
-    const session = request.cookie("session");
-    if (!session) {
-      return request.redirect("/login");
-    }
-    users = await db.select().from("users").where({ session });
-  });
-
-  async function deleteUser(id: string) {
-    await db.delete().from("users").where({ id });
-    delete self.listItems[id];
-  }
-
-  async function createUser() {
-    const userData = {
-      email: self.email,
-      name: self.name,
-    };
-    await db.insert("users").value(userData);
-    self.dialog = render(Dialog, userData);
-    self.name = "";
-    self.email = "";
+  function logValue() {
+    console.log(request);
+    console.log(self.number);
   }
 </script>
-<div .for="{user in users}" .key="{user.id}" :listItems="innerHtml">
-  <User user="{user}" onDelete="{deleteUser}" />
-</div>
-
-<div>
-  <input :name="value" />
-  <input :email="value" />
-</div>
-<div :dialog="innerHtml"></div>
+<input :number="value" />
 ```
 
-Converted Js:
+Compiled Typescript Output(`Home.av.ts`):
 
-```js
-// Home.av.ts file
-import db from "#db";
-import User from "./User.av";
-import Dialog from "./Dialog.av";
-import { render, component } from "@aromix/view";
+```ts
+import { AromixHttpRequest } from "@aromix/view";
 
-export default component((context) => {
-  let { request, onRender, self } = context;
-  // ==== User Script Start ===
-  let users: any[];
-  onRender(async () => {
-    const session = request.cookie("session");
-    if (!session) {
-      return request.redirect("/login");
-    }
-    users = await db.select().from("users").where({ session });
-  });
+namespace Home {
 
-  async function deleteUser(id: string) {
-    await db.delete().from("users").where({ id });
-    delete self.listItems[id];
+  export interface SelfType {
+    number: number;
   }
 
-  async function createUser() {
-    const userData = {
-      email: self.email,
-      name: self.name,
+  export interface PropType {
+    initial: number;
+  }
+
+  export const SelfDefaults: SelfType = { number: 0 };
+
+  export const ClientMeta = {
+    actions: {
+      act_log_value: {
+        s: { number: "12345:value" },
+        p:{}
+      },
+    },
+  };
+
+  export function c(props: PropType) {
+    return {
+      type: "component" as const,
+      reference: Home,
+      props,
     };
-    await db.insert("users").value(userData);
-    self.dialog = render(Dialog, userData);
-    self.name = "";
-    self.email = "";
   }
 
-  // ==== User Script End ===
-  return {
-    template() {
-      const html: Array<object> = [];
-      for (user in users) {
-        html.push({
-          type: "tag",
-          name: "div",
-          key: user.id,
-          childs: [
-            {
-              type: "component",
-              reference: Users,
-              inputs: {
-                user: user,
-                onDelete: deleteUser,
-              },
-            },
-          ],
-        });
-      }
+  export function Server(
+    self: SelfType,
+    request: AromixHttpRequest,
+    props: PropType,
+  ) {
+    const { initial } = props;
 
-      html.push({
-        type: "tag",
-        name: "div",
-        childs: [
-          {
-            type: "tag",
-            name: "input",
-            refs:[
-{
-identifier:'email',
-target:'value',
-uuid: '123455'
+    function logValue() {
+      console.log(request);
+      console.log(self.number);
+    }
+
+    return {
+      expose: {
+        initial,
+        logValue,
+      },
+      hooks: [],
+      actions: {
+        logValue: "act_log_value",
+      },
+    };
+  }
+
+  export function Template(exposed: ReturnType<typeof Server>["expose"]) {
+    const { initial, logValue } = exposed;
+    const $html: Array<object> = [];
+
+    $html.push({
+      type: "tag",
+      name: "input",
+      attributes: {
+        value: initial,
+        type: "number",
+        onchange: logValue,
+      },
+      refId: "12345",
+    });
+
+    return $html;
+  }
 
 }
 
-
-            ]
-
-                      },
-          {
-            type: "tag",
-            name: "input",
-          },
-        ],
-      });
-
-      html.push({
-        type: "tag",
-        name: "div",
-        childs: [],
-      });
-
-      return html;
-    },
-    actions: [
-      {
-        reference: deleteUser,
-        parameter: {
-          id: {
-            type: "string",
-          },
-        },
-        readDeps: [],
-        writeDeps: ["self.listItem"],
-        routeId: "12dyed34dh",
-      },
-
-      {
-        reference: createUser,
-        parameter: {},
-        readDeps: ["self.email", "self.name"],
-        writeDeps: ["self.dialog", "self.name", "self.email"],
-        routeId: "8ksj32jd9a",
-      },
-    ],
-  };
-});
-
+export default Home;
 ```
 
-Child Component:
 
-```html
-<!--User.av-->
-<script server lang="ts">
-  import UserModel from "#models";
-  const { user, onDelete } = input<{
-    user: typeof UserModel.$inferSelect;
-    onDelete: Function;
-  }>();
-</script>
-<div lay="card:user">
-  <p>{user.id}</p>
-  <p>{user.name}</p>
-  <p>{user.email}</p>
-  <button onclick="{onDelete(user.id)}"></button>
-</div>
+```ts
+
+export function test(){
+
+
+  return sliz!{
+
+
+    
+  }
+}
+
 ```

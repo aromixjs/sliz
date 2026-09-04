@@ -53,9 +53,7 @@ The second problem exists because the server must be able to precisely update th
 
 These two problems are related, but they should not automatically be solved by one large state-management system.
 
-
 Things that i tried:
-
 
 # First approach: LiveView-style server state
 
@@ -177,20 +175,18 @@ For example:
 
 ```ts
 const deleteUser = action({
-    email: Homepage.select("email"),
+  email: Homepage.select("email"),
 
-    async run(c) {
-        const validatedEmail = validateEmail(c.email);
+  async run(c) {
+    const validatedEmail = validateEmail(c.email);
 
-        await mailer.sendMail({
-            to: validatedEmail,
-            body: EmailTemplate
-        });
+    await mailer.sendMail({
+      to: validatedEmail,
+      body: EmailTemplate,
+    });
 
-        Homepage.select("div1").innerText(
-            "Email Sent Successfully"
-        );
-    }
+    Homepage.select("div1").innerText("Email Sent Successfully");
+  },
 });
 ```
 
@@ -222,15 +218,15 @@ And collections can use the same mechanism:
 
 ```ts
 MyComponent.select("items").insert({
-    id: 9,
-    name: "Widget",
-    qty: 1
+  id: 9,
+  name: "Widget",
+  qty: 1,
 });
 
 MyComponent.select("items").remove(itemId);
 
 MyComponent.select("items").update(itemId, {
-    qty: 3
+  qty: 3,
 });
 
 MyComponent.select("items").move(itemId, 0);
@@ -276,19 +272,18 @@ This goes against the main Sliz goal:
 
 So although this approach is technically sound and gives very precise behavior, it was rejected because **the precision is being purchased with too much explicit wiring**. The problem is not that the mechanism cannot work; the problem is that too much of the mechanism becomes application code.
 
-
 # Fifth approach: bind the UI values to the action
 
 Another version is:
 
 ```html
-<input .bind={deleteUserAction.user}>
+<input .bind="{deleteUserAction.user}" />
 ```
 
 and:
 
 ```html
-<select .bind={deleteUserAction.address}>
+<select .bind="{deleteUserAction.address}"></select>
 ```
 
 This solves transport automatically.
@@ -322,9 +317,7 @@ It is therefore not a good long-term foundation for large applications.
 A more structured version of binding is a logical data scope:
 
 ```html
-<section .data={checkout}>
-    ...
-</section>
+<section .data="{checkout}">...</section>
 ```
 
 and descendant inputs contribute to that data.

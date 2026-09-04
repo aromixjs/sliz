@@ -123,22 +123,14 @@ Notice `onclick={removeTask}` became `lay="click:task_remove_a1b2c3"` in the out
 
 That's the seam where Sliz hands off to Layos. Sliz never ships any client behavior of its own, so whatever needs to happen in the browser gets expressed as a Layos token instead.
 
-
 There is also another syntax that is also equally good
 
 ```html
-<server>
-  // all server js code
-function removeTask(taskId) {
-  db.tasks.delete(taskId);
-}
-
-</server>  
-<button onclick={removeTask}></button>
-
+<server> // all server js code function removeTask(taskId) { db.tasks.delete(taskId); } </server>
+<button onclick="{removeTask}"></button>
 ```
-the final output will be the same whihc ever becomes cleaner to implment the html templateing is still the same .
 
+the final output will be the same whihc ever becomes cleaner to implment the html templateing is still the same .
 
 ## Layos
 

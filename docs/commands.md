@@ -26,22 +26,18 @@ MyComponent.select("items").reorder([id3, id1, id2]);
 
 ```ts
 const deleteUser = action({
-  deps:[UserList.userContent],
+  deps: [UserList.userContent],
   async run(c) {
     const validatedEmail = validateEmail(c.userContent);
     await mailer.sendMail({
       to: validatedEmail,
       body: EmailTemplate,
     });
-    
 
-    c.send(UserList.someRef,data)
-
-    
+    c.send(UserList.someRef, data);
   },
 });
 ```
-
 
 ```ts
 const UserList = sliz!{
@@ -49,14 +45,13 @@ const UserList = sliz!{
 //html code
 
 
-} 
+}
 ```
-
 
 ```html
 <server>
-  const body = request.body() await db.read(body.someData) const deleteUser=
-  action({ async run(){ } }) const userData = model({})
+  const body = request.body() await db.read(body.someData) const deleteUser= action({ async run(){ }
+  }) const userData = model({})
 </server>
 <div class="card" class="{isActive}">
   <h3>{product.name}</h3>

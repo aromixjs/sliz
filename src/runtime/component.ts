@@ -1,21 +1,27 @@
 import { AromixHttpRequest } from "../router/request";
 
 export interface AvComponent<
-   Instance extends { SelfType: any, PropType: any } = any,
-   ServerExpose extends object = any
+  Prop extends object = any,
+  Self extends object = any,
+  TServerExpose extends object = any,
 > {
-   new(): Instance,
-   Server(
-      self: Instance['SelfType'],
-      request: AromixHttpRequest,
-      props: () => Instance['PropType']
-   ): {
-      expose: ServerExpose,
-      actions: Array<object>,
-      hooks: Array<object>
-   }
+  SelfDefaults: Self;
 
-   Template(exposed: ServerExpose): Array<object>
-   SelfMeta: Record<string, any>
-   SelfDefaults: Instance["SelfType"];
+  c(props: Prop): {
+    type: "component";
+    reference: any;
+    props: Prop;
+  };
+
+  Server(
+    self: Self,
+    request: AromixHttpRequest,
+    props: Prop,
+  ): {
+    expose: TServerExpose;
+    actions: Record<string, string>;
+    hooks: Array<object>;
+  };
+
+  Template(exposed: TServerExpose): Array<object>;
 }

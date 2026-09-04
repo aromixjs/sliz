@@ -1,6 +1,1 @@
-export interface AromixHttpRequest { 
-
-
-
-  
-}
+export interface AromixHttpRequest {}

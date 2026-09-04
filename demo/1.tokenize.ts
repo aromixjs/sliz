@@ -13,16 +13,6 @@ const tokens = new SlizTokenizer(`
 
 console.dir(tokens, { depth: null });
 
-
 const data = {
-
-async *run(){
-
-
-
-
-   
-}
-
-
-}
+  async *run() {},
+};

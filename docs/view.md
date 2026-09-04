@@ -45,8 +45,6 @@ c.render(self.outerDiv, CongratulationComponent)
 
 ```
 
-
-
 ```ts
 
 @server{

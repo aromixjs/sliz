@@ -11,7 +11,3 @@ const output = captureInterpolation(scanner);
 const expr = source.slice(output.start, output.end);
 
 console.dir({ output, expr }, { depth: null });
-
-
-
-
