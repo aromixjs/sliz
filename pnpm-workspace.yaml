@@ -4,3 +4,5 @@ allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:
   - '@aromix/core@0.6.0'
+overrides:
+  '@aromix/view': 'link:'
