@@ -1,0 +1,88 @@
+<!doctype html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!--META-->
+<title>View Prototype</title>
+<style>
+  body { font-family: system-ui; padding: 24px; max-width: 600px; margin: auto; }
+  button { cursor: pointer; padding: 4px 10px; }
+</style>
+</head>
+
+<body>
+  <!--APP-->
+
+<script type="module">
+// Generic wire client. Nothing here references a component by name —
+// components are found purely via data-wire-id / data-wire-<event> markers.
+// Plain data-* attributes, no colon syntax, so no selector-escaping needed.
+
+const WIRE_EVENTS = ['click', 'change', 'submit']
+
+function readSnapshot(id) {
+  let meta = document.querySelector(`meta[data-wire-snapshot][data-id="${id}"]`)
+  if (!meta) return null
+  try { return JSON.parse(meta.getAttribute('content')) }
+  catch (e) { console.error('bad snapshot for', id, e); return null }
+}
+
+function forgetSnapshot(id) {
+  document.querySelector(`meta[data-wire-snapshot][data-id="${id}"]`)?.remove()
+}
+
+function writeSnapshots(map) {
+  for (let [id, snap] of Object.entries(map)) {
+    forgetSnapshot(id)
+    let meta = document.createElement('meta')
+    meta.setAttribute('data-wire-snapshot', '')
+    meta.setAttribute('data-id', id)
+    meta.setAttribute('data-name', snap.memo.name)
+    meta.setAttribute('content', JSON.stringify(snap))
+    document.head.appendChild(meta)
+  }
+}
+
+async function handle(event) {
+  let attr = `data-wire-${event.type}`
+  let el = event.target.closest(`[${attr}]`)
+  if (!el) return
+  if (event.type === 'submit') event.preventDefault()
+
+  let targetEl = el.closest('[data-wire-id]')
+  if (!targetEl) return
+  let parentEl = targetEl.parentElement?.closest('[data-wire-id]') || null
+
+  let snapshot = readSnapshot(targetEl.getAttribute('data-wire-id'))
+  if (!snapshot) return console.error('no snapshot found for', targetEl)
+  let parentSnapshot = parentEl ? readSnapshot(parentEl.getAttribute('data-wire-id')) : null
+
+  let method = el.getAttribute(attr)
+
+  let res = await fetch('/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ snapshot, parentSnapshot, calls: [{ method, params: [] }] })
+  })
+  let result = await res.json()
+  if (result.error) return console.error('server error:', result.error)
+
+  // The whole subtree rooted at targetEl (or parentEl, if this update
+  // bubbled up) is about to be replaced — drop its stale meta entries
+  // before writing the fresh ones the server sent back.
+  let rootEl = parentEl || targetEl
+  let staleIds = [rootEl, ...rootEl.querySelectorAll('[data-wire-id]')].map(n => n.getAttribute('data-wire-id'))
+  staleIds.forEach(forgetSnapshot)
+
+  let temp = document.createElement('div')
+  temp.innerHTML = result.html
+  rootEl.replaceWith(temp.firstElementChild)
+
+  writeSnapshots(result.snapshots)
+}
+
+WIRE_EVENTS.forEach(type => document.addEventListener(type, handle))
+</script>
+</body>
+
+</html>

@@ -59,3 +59,11 @@ One representative run (Windows, Node v24):
 ## Reading the results
 
 On this run htmlparser2 came out about 12.7x faster on the small workload, 11.0x on large, and 10.3x on huge, so the gap is roughly constant across input sizes. That gap is not a surprise, sliz's tokenizer is built for structure and diagnostics over speed, every character goes through `peek`/`advance` on a `CharacterScanner`, every construct that can fail gets its own token, and every `{expr}` hands off to the TypeScript scanner via `JsInterpolationResolver`, so there's a lot of machinery per byte that htmlparser2 simply doesn't have. The benchmark exists so that gap stays visible and measurable when the tokenizer is optimized; what matters is the trend on the same machine, not the absolute numbers, those drift with hardware and vitest versions anyway.
+
+```ts
+tag UserList(user:List){
+<li for={u in user}>
+{user}
+</li>
+}
+```

@@ -26,7 +26,6 @@ Compiled Typescript Output(`Home.av.ts`):
 import { AromixHttpRequest } from "@aromix/view";
 
 namespace Home {
-
   export interface SelfType {
     number: number;
   }
@@ -41,7 +40,7 @@ namespace Home {
     actions: {
       act_log_value: {
         s: { number: "12345:value" },
-        p:{}
+        p: {},
       },
     },
   };
@@ -95,8 +94,33 @@ namespace Home {
 
     return $html;
   }
-
 }
 
 export default Home;
+```
+
+```ts
+
+```
+
+```ts
+function List(list: List[]) {
+  const __$ = [];
+
+  for (list in lists) {
+    __$.push({
+      type: "tag",
+      name: "p",
+      selfClosing: false,
+      child: [
+        {
+          type: "text",
+          content: list.name,
+        },
+      ],
+    });
+  }
+
+  return __$
+}
 ```
