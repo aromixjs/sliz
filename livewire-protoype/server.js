@@ -183,8 +183,6 @@ class UserCard extends View {
   handleDelete() {
     console.log('date');
     console.log(this.userId);
-    
-    
     this.onDelete(this.userId)
   }
   render() {
