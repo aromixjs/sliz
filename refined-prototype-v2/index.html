@@ -1,0 +1,111 @@
+<!doctype html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Patch-command runtime prototype</title>
+<style>
+  body { font-family: system-ui; padding: 24px; max-width: 600px; margin: auto; }
+  button { cursor: pointer; padding: 4px 10px; }
+</style>
+<!--MANIFEST-->
+</head>
+
+<body>
+<!--APP-->
+
+<script>
+// Generic runtime. This file has zero knowledge of Counter, UserList, or
+// UserCard — everything component-specific comes from window.__COMPONENTS__,
+// the manifest the server derived from compiled.js (bindings + which state
+// names each action reads — never the action logic itself).
+
+const COMPONENTS = window.__COMPONENTS__
+
+function findRef(refId) {
+  return document.querySelector(`[data-ref="${refId}"]`)
+}
+
+// Resolve {selector,prop} for a state key, scoped to one component instance.
+function bindingTarget(refEl, key) {
+  let comp = COMPONENTS[refEl.dataset.component]
+  let b = comp.bindings[key]
+  return b.selector ? refEl.querySelector(b.selector) : refEl
+}
+
+function readValue(refEl, key) {
+  let comp = COMPONENTS[refEl.dataset.component]
+  let b = comp.bindings[key]
+  return bindingTarget(refEl, key)[b.prop]
+}
+
+function applyOp(op) {
+  if (op.op === 'remove') {
+    findRef(op.ref)?.remove()
+    return
+  }
+  if (op.op === 'set') {
+    let refEl = findRef(op.ref)
+    if (!refEl) return console.error('set: no element for ref', op.ref)
+    let comp = COMPONENTS[refEl.dataset.component]
+    let b = comp.bindings[op.key]
+    bindingTarget(refEl, op.key)[b.prop] = op.value
+    return
+  }
+  if (op.op === 'insert') {
+    findRef(op.after)?.insertAdjacentHTML('afterend', op.html)
+    return
+  }
+  console.error('unknown op', op)
+}
+
+// Walk from the clicked element up through data-ref boundaries until we
+// find the one whose manifest actually declares this action. A click
+// inside the acting component itself resolves on the first hop (a normal
+// local action); a click on a child that only *names* a parent's action
+// (UserCard's delete button naming "removeUser") resolves a hop or two
+// further up. Same lookup, no separate "emit" mechanism required.
+function resolveTarget(button) {
+  let name = button.dataset.action
+  let el = button.closest('[data-ref]')
+  while (el) {
+    let comp = COMPONENTS[el.dataset.component]
+    if (comp && comp.actions[name]) return { el, comp, name }
+    el = el.parentElement?.closest('[data-ref]')
+  }
+  return null
+}
+
+document.addEventListener('click', async (event) => {
+  let button = event.target.closest('[data-action]')
+  if (!button) return
+
+  let target = resolveTarget(button)
+  if (!target) return console.error('no component defines action', button.dataset.action)
+  let { el, comp, name } = target
+  let actionDef = comp.actions[name]
+
+  let reads = {}
+  for (let key of actionDef.reads) reads[key] = readValue(el, key)
+
+  let raw = button.dataset.param
+  let params = raw === undefined ? [] : [isNaN(raw) ? raw : Number(raw)]
+
+  let res = await fetch('/action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      component: el.dataset.component,
+      ref: el.dataset.ref,
+      action: name,
+      reads,
+      params
+    })
+  })
+  let result = await res.json()
+  if (result.error) return console.error('server error:', result.error)
+
+  result.ops.forEach(applyOp)
+})
+</script>
+</body>
+</html>
