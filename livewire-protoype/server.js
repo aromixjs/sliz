@@ -181,6 +181,10 @@ class UserCard extends View {
     this.userName = props.userName
   }
   handleDelete() {
+    console.log('date');
+    console.log(this.userId);
+    
+    
     this.onDelete(this.userId)
   }
   render() {
